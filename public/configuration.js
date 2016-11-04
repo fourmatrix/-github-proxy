@@ -63,6 +63,44 @@
 			});
 		});
 
+		$("table").on("click",".sync", function(e){
+			var $targetTd = $(e.currentTarget).parent();
+			var methodName =  $targetTd.siblings(".service-method").text().trim();
+
+			var param =	 $targetTd.siblings(".service-param").text().trim(),
+				url = $targetTd.siblings(".service-url").text().trim();
+			
+			var setting = {	
+					dataType: 'json',
+					type: methodName,
+					headers:{
+						'__ignore_cache__':true
+					},
+					success:function(data){
+						console.log("get back");
+						$targetTd.siblings(".service-url").css({color: 'green'});
+
+					},
+					error:function(err){
+						console.log(err);
+
+						$targetTd.siblings(".service-url").css({color: 'red'});
+					}
+				};
+
+				if(methodName === 'get'){
+					(param.length > 0)&& (url = `${url}?${param}`);
+				}else{
+					(param.length > 0) && (setting.data = param);	
+					setting.contentType = 'application/json';
+				}
+
+				setting.url = url;
+				
+			$.ajax(setting);
+			
+		});
+
 		$("table").on("click",".edit", function(e){
 			var $targetTd = $(e.currentTarget).parent();
 			$.get("/__server_config__/load_service",{

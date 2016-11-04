@@ -922,6 +922,8 @@ const http = require("http")
  function handleResponse(hostRes, res,req){
 	 res.statusCode = hostRes.statusCode;
 
+	 var __ignoreCache = req.headers.__ignore_cache__;
+
 	 Object.keys(hostRes.headers).forEach((item)=>{
 		 res.setHeader(item, hostRes.headers[item] );
 	 });
@@ -930,12 +932,11 @@ const http = require("http")
 
 	 if(__status === 2){
 
-		 if(config.get("cacheLevel") > cacheLevel.no){
+		 if(config.get("cacheLevel") > cacheLevel.no || __ignoreCache ){
 			 if(config.get('workingMode') === 0){
 
 				 hostRes.pipe(new CacheStream({key: oCache.generateCacheKey(req),cache: oCache.cache, header:Object.assign({},hostRes.headers)})).pipe(res);
 			 }else{
-				 //TODO cache in data provider mode
 				 let oService = {};
 				 oService.method = req.method.toLowerCase();
 				 oService.url = req.url;
@@ -958,14 +959,16 @@ const http = require("http")
 		 hostRes.pipe(res);
 	 }else if(__status >= 4){
 		 console.log(`status is ${__status}`);
-
-		 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-
-			 console.log("find cache");
-		 }).catch(err=>{
+	
+		 if(!__ignoreCache){
+			 oDataProxy.tryLoadLocalData(req, res).then(data=>{
+				 console.log("find cache");
+			 }).catch(err=>{
+				 hostRes.pipe(res);
+			 });
+		 }else{
 			 hostRes.pipe(res);
-		 });
-
+		 }
 	 }
  }
 
@@ -983,10 +986,10 @@ const http = require("http")
 		 res.end("");
 		 return;
 	 }
-	 //var matched;
 	 var _reqeustHeader = req.headers;
+	 var __ignoreCache = _reqeustHeader.__ignore_cache__;
 
-	 if(config.get("cacheLevel") == cacheLevel.first){     // cache first
+	 if(config.get("cacheLevel") == cacheLevel.first && !__ignoreCache){     // cache first
 
 
 		 oDataProxy.tryLoadLocalData(req, res).then(data=>{
@@ -1027,18 +1030,16 @@ const http = require("http")
 						 bodyData:req.bodyData
 					 }, (err, endPointRes)=>{
 						 if(err){
-							 if(config.get("cacheLevel") > cacheLevel.no){
+							 if(config.get("cacheLevel") > cacheLevel.no && !__ignoreCache){
 
 								 oDataProxy.tryLoadLocalData(req, res).then(data=>{
 									 console,log("got cache");
 								 }).catch(err=>{
 									 errResponse(err, res);
 								 })
-								 //if(oCache.tryLoadLocalData(req, res)) return;
 							 }else{
 								 errResponse(err, res);		
 							 }
-
 						 }else{
 							 handleResponse(endPointRes, res,req);	
 						 }
@@ -1082,17 +1083,10 @@ const http = require("http")
 					 __req.on("error", (e)=>{
 
 						 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-
 							 console.log("got cache");
 						 }).catch(err=>{
 							 errResponse(e, res);
-
 						 });
-
-
-						 // if(oCache.tryLoadLocalData(req, res)) return;
-
-						 // errResponse(e, res);
 
 					 });
 					 __req.setTimeout(100000, ()=>{
