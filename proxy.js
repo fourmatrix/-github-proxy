@@ -4,12 +4,10 @@ const http = require("http")
 	 ,https = require("https")
 
 	 ,path = require("path")
- //	 ,Buffer = require("buffer")
 	 ,fs = require("fs")
 	 ,CacheStream = require("./cacheStream")
 	 ,zlib = require('zlib')
-	 ,ejs = require("ejs")
-	 ,request = require("request");
+	 ,ejs = require("ejs");
 
  const cacheLevel = {
 	 no: 0,				// cache no will load data only from endpoint server, but ignore cache
@@ -19,7 +17,7 @@ const http = require("http")
 
  const workingMode = {
 	 proxyCache: 0,			// worked as http proxy, support redirect to endpoint server, cache all kinds of response
-	 serviceProvider: 1		// worked as data provider service, ONLY SUPPORT JSON data
+	 serviceProvider: 1,		// worked as data provider service, ONLY SUPPORT JSON data
 
  };
  const SERVER_CONFIG = './_config/serverConfig.json';
@@ -54,16 +52,14 @@ const http = require("http")
 			 this.set(k, v);
 		 }); 
 	 });
-
-
  };
 
  Map.prototype.toJson = function(){
-	return JSON.stringify([...this]);
+	 return JSON.stringify([...this]);
  };
 
  Map.fromJson = function(jsonStr){
-	return new Map(JSON.parse(jsonStr));
+	 return new Map(JSON.parse(jsonStr));
  };
 
 
@@ -72,9 +68,9 @@ const http = require("http")
 	 static getDefault(){
 		 var __map =  new Map([
 			 ["port", 8079]
-			,["cacheLevel", 2]
+			,["cacheLevel", 1]
 			,["workingMode", 1]
-			,["endpointServer.address","http://localhost" ]
+			,["endpointServer.address","https://localhost" ]
 		//	,["endpointServer.address","https://www3.lenovo.com"]
 			,["endpointServer.port", 9002 ]
 			,["endpointServer.host", undefined]
@@ -90,25 +86,25 @@ const http = require("http")
 			,["proxy.port",undefined]
 
 		 ]);
-	
+
 		 let __defaultConfig = {};
 
 		 for (let [key, val] of __map){
-			
-			let tmp = __defaultConfig;
-			key.split('.').forEach((K, inx, arr)=>{
-				
-				if(inx === arr.length -1){
-					tmp[K] = val;
-				}else{
-					tmp = tmp[K]?tmp[K]:tmp[K]={};
-				}
-			});
+
+			 let tmp = __defaultConfig;
+			 key.split('.').forEach((K, inx, arr)=>{
+
+				 if(inx === arr.length -1){
+					 tmp[K] = val;
+				 }else{
+					 tmp = tmp[K]?tmp[K]:tmp[K]={};
+				 }
+			 });
 		 }
 
 		 __defaultConfig.keys = function(){
-		 
-			return __map.keys();
+
+			 return __map.keys();
 		 }
 
 		 ServerConfig.getDefault = function(){
@@ -123,22 +119,21 @@ const http = require("http")
 		 return Array.from(ServerConfig.getDefault().keys());
 	 }
 
-
 	 set (key, val){
 		 if(ServerConfig.fields.indexOf(key) >= 0){
-			let _o = this.serverMap;
-			key.split('.').some((key, inx, arr)=>{
-				if(inx === arr.length-1){
+			 let _o = this.serverMap;
+			 key.split('.').some((key, inx, arr)=>{
+				 if(inx === arr.length-1){
 
-					if(_o[key] !== val){
-						this.isChanged = true;
-						_o[key] = val;
-					}
-						return true;
-				}else{
-					_o = _o[key];
-				}
-			});	
+					 if(_o[key] !== val){
+						 this.isChanged = true;
+						 _o[key] = val;
+					 }
+					 return true;
+				 }else{
+					 _o = _o[key];
+				 }
+			 });	
 		 }
 		 return this;
 	 }
@@ -174,7 +169,7 @@ const http = require("http")
 		 var _o = this.serverMap;
 
 		 key.split('.').forEach(key=>{
-			_o = _o[key];
+			 _o = _o[key];
 		 });
 
 		 return _o;
@@ -199,7 +194,7 @@ const http = require("http")
 		 // return value;
 	 }
 	 hasProxy(){
-		return !!(this.get("proxy")&&this.get("proxy").host&&this.get("proxy").host.length > 0);
+		 return !!(this.get("proxy")&&this.get("proxy").host&&this.get("proxy").host.length > 0);
 	 }
 
 	 isSSL(){
@@ -247,7 +242,7 @@ const http = require("http")
 			 if(process.env["npm_package_config_" + key]){
 				 //	 envmap.set(key, process.env["npm_package_config_" + key]);
 				 assignValue(key, process.env["npm_package_config_" + key], envmap )
-				 
+
 			 }
 		 });
 
@@ -257,7 +252,7 @@ const http = require("http")
 			 if((matches = pre.match(/^--(.*)/)) &&( aKeys.indexOf(matches[1].toLowerCase()) >= 0)){
 				 //envmap.set(matches[1].toLowerCase(), item);
 				 //envmap[matches[1].toLowerCase()] = item;
-				assignValue(matches[1].toLowerCase(), item,envmap);
+				 assignValue(matches[1].toLowerCase(), item,envmap);
 
 			 }	
 			 return item;
@@ -273,10 +268,10 @@ const http = require("http")
 
 	 loadConfigFile(){
 		 try{
-			  fs.statSync(SERVER_CONFIG);
-			  var __config = fs.readFileSync(SERVER_CONFIG,'utf-8');
-			  return __config.length > 0 ? JSON.parse(__config): {};
-			  //  return Map.fromJson(__config);
+			 fs.statSync(SERVER_CONFIG);
+			 var __config = fs.readFileSync(SERVER_CONFIG,'utf-8');
+			 return __config.length > 0 ? JSON.parse(__config): {};
+			 //  return Map.fromJson(__config);
 
 		 }catch(e){
 
@@ -284,12 +279,12 @@ const http = require("http")
 				 var stat = fs.statSync('./_config');
 
 			 }catch(e){
-				fs.mkdirSync('./_config');
+				 fs.mkdirSync('./_config');
 			 }
-				fs.writeFile(SERVER_CONFIG, '');
-				return {};
-			
-		  }	
+			 fs.writeFile(SERVER_CONFIG, '');
+			 return {};
+
+		 }	
 	 }
 
 	 constructor(){
@@ -299,252 +294,246 @@ const http = require("http")
 		 Object.assign(this.serverMap,defaultMap, this.loadConfigFile(), this.__loadEnvironmentConfig() );
 		 //	 this.serverMap.copyFrom(defaultMap,this.loadConfigFile(),this.__loadEnvironmentConfig());
 	 }
-
-
  }
 
-  class ServiceConfig{
- 
-	  constructor(){
+ class ServiceConfig{
 
-		this.serviceMap = [];
+	 constructor(){
 
-		try{
-			var _file =  fs.readFileSync(SERVICE_CONFIG);
-			this.serviceMap = _file.length > 0? JSON.parse(_file):[];
-		
-		}catch(e){
-			fs.writeFile(SERVICE_CONFIG, '');
-		}
-	  }
+		 this.serviceMap = [];
 
-	  getServiceList(){
-		return this.serviceMap;
-	  }
+		 try{
+			 var _file =  fs.readFileSync(SERVICE_CONFIG);
+			 this.serviceMap = _file.length > 0? JSON.parse(_file):[];
 
-	  __saveServiceList(oService){
+		 }catch(e){
+			 fs.writeFile(SERVICE_CONFIG, '');
+		 }
+	 }
 
-		  return new Promise((resolve, reject)=>{
-				fs.writeFile(SERVICE_CONFIG, JSON.stringify(this.serviceMap), (err)=>{
-					if(err){
-						reject(err);
-					}else{
-						resolve(oService);
-					}
-				});
-		  });
-	  }
+	 getServiceList(){
+		 return this.serviceMap;
+	 }
 
-	  __hasService(oService){
-		  return this.__findService(oService) >= 0;  
-	  }
+	 __saveServiceList(oService){
 
-	  __findService(oService){
-	  
-	  return this.serviceMap.findIndex(service=>{
-				  if(oService.method === 'get'){
-					return service.url === oService.url && service.method === oService.method&& service.param === oService.param;
-				  }else{
-					return service.url === oService.url && service.method === oService.method;
-				  }
+		 return new Promise((resolve, reject)=>{
+			 fs.writeFile(SERVICE_CONFIG, JSON.stringify(this.serviceMap), (err)=>{
+				 if(err){
+					 reject(err);
+				 }else{
+					 resolve(oService);
+				 }
+			 });
+		 });
+	 }
+
+	 __hasService(oService){
+		 return this.__findService(oService) >= 0;  
+	 }
+
+	 __findService(oService){
+
+		 return this.serviceMap.findIndex(service=>{
+			 if(oService.method === 'get'){
+				 return service.url === oService.url && service.method === oService.method&& service.param === oService.param;
+			 }else{
+				 return service.url === oService.url && service.method === oService.method;
+			 }
+		 });
+
+	 }
+
+	 addServiceURL(oService){
+
+		 return new Promise((resolve, reject)=>{
+			 // only get can support multi param
+			 if(!this.__hasService(oService)){
+
+				 let __service = Object.assign({}, oService);
+				 __service.data = null;
+				 this.serviceMap.push(__service);
+				 this.__saveServiceList(oService).then((data)=>{
+					 resolve(data);
+				 }).catch(err=>{
+					 reject(err);
 				 });
 
-	  }
+				 //			fs.writeFile(SERVICE_CONFIG, JSON.stringify(this.serviceMap), (err)=>{
+				 //			fs.writeF	if(err){
+				 //			fs.writeF		reject(err);
+				 //			fs.writeF	}else{
+				 //			fs.writeF		resolve(serviceUrl);
+				 //			fs.writeF	}
+				 //			fs.writeF});
 
-	  addServiceURL(oService){
-	
-		  return new Promise((resolve, reject)=>{
-				// only get can support multi param
-			  if(!this.__hasService(oService)){
-				this.serviceMap.push(oService);
+			 }else{
+				 resolve("no_change");
 
-				this.__saveServiceList(oService).then((data)=>{
-					resolve(data);
-				}).catch(err=>{
-					reject(err);
-				});
+			 }
+		 });
+	 }
 
-				//			fs.writeFile(SERVICE_CONFIG, JSON.stringify(this.serviceMap), (err)=>{
-				//			fs.writeF	if(err){
-				//			fs.writeF		reject(err);
-				//			fs.writeF	}else{
-				//			fs.writeF		resolve(serviceUrl);
-				//			fs.writeF	}
-				//			fs.writeF});
-			  
-			}else{
-				resolve("no_change");
-			
-			}
-		  });
-	  }
+	 generatePath(oService){
+		 return path.join("./_config",oService.method + oService.path) + ".json";
+	 }
 
-	  generatePath(oService){
-		return path.join("./_config",oService.method + oService.path) + ".json";
-	  }
-
-	  __generateKey(oService){
+	 __generateKey(oService){
 		 return (oService.method === "get" &&oService.param&&  oService.param.length > 0)? oService.param: "data";
-	  }
-	  addService(oService){
+	 }
+	 addService(oService){
 
-		  var _path = this.generatePath(oService);
-		  // support multi-param only for GET method
-		
-		  var _key = this.__generateKey(oService);
+		 var _path = oService.path || this.generatePath(oService);
+		 // support multi-param only for GET method
 
-		  return new Promise((resolve, reject)=>{
-			
-				  fs.readFile(_path,'utf-8',(err,data)=>{
+		 var _key = this.__generateKey(oService);
 
-					  if(err){
+		 return new Promise((resolve, reject)=>{
 
-						  let _oCache = {};
-						  _oCache[_key] = oService.data;
-						  fs.writeFile(_path, JSON.stringify(_oCache),'utf-8', (err)=>{
-							  if(err){
-								  reject(err);
-							  }else{
-								  resolve(oService);
-							  }
-						  });
+			 fs.readFile(_path,'utf-8',(err,data)=>{
 
-					  }else{
-							
-						  let cacheData = JSON.parse(data);
-						  cacheData[_key] = oService.data;	
-						  fs.writeFile(_path,JSON.stringify(cacheData), 'utf-8',(err)=>{
-							  if(err){
-								  reject(err);
-							  }else{
-								  resolve(oService);
-							  }
-						  } );
-					  }
-				  }); 
-		  });
-	  }
+				 if(err){
 
-	  __deleteService(oService){
+					 let _oCache = {};
+					 _oCache[_key] = oService.data;
+					 fs.writeFile(_path, JSON.stringify(_oCache),'utf-8', (err)=>{
+						 if(err){
+							 reject(err);
+						 }else{
+							 resolve(oService);
+						 }
+					 });
 
-		  var _path = this.generatePath(oService);
-	return new Promise((resolve, reject)=>{
+				 }else{
 
-		  if(oService.method === 'get' && oService.param.length > 0){
-			
-			  fs.readFile(_path,'utf-8',(err, data)=>{
-				  if(err){
-					  console.error(err);
-					  resolve('no-data');
-					}else{
-						let oData = JSON.parse(data);
-						delete oData[oService.param];
-						fs.writeFile(_path,JSON.stringify(oData) ,"utf-8",err=>{
-							if(err){
-								console.error(err);
-								reject(err);
-							}else{
-								resolve(oService);
-							}
-						});
-					}
-			  } );
-		  }else{
-			fs.unlink(_path, (err)=>{
-				if(err){
-					console.error(err);
-					reject(err);
-				  }else{
-					resolve(oService);
-				  }
-			  });
-		  }
-		    });
+					 let cacheData = JSON.parse(data);
+					 cacheData[_key] = oService.data;	
+					 fs.writeFile(_path,JSON.stringify(cacheData), 'utf-8',(err)=>{
+						 if(err){
+							 reject(err);
+						 }else{
+							 resolve(oService);
+						 }
+					 } );
+				 }
+			 }); 
+		 });
+	 }
 
-	  }
-	  deleteService(oService){
-		  return new Promise((resolve, reject)=>{
-				
-			  if(!this.__hasService(oService)){
-					resolve("no_change");	
-			  }else{
-				  this.serviceMap.splice(this.__findService(oService), 1);
-				
-				Promise.all([this.__saveServiceList(oService), this.__deleteService(oService)]).then(data=>{
-						resolve(data);
-					  }).catch(err=>{
-						reject(err);
-					  });
-			  }
-		  });
-	  }
+	 __deleteService(oService){
 
-	  loadServiceData(oService){
-			
-		  return new Promise((resolve, reject)=>{
-				var _path = this.generatePath(oService);
-				fs.readFile(_path,'utf-8', (err,data)=>{
-					if(err){
-						console.error(err);
-						resolve('no-data');
-					}else{
-						let rootKey = this.__generateKey(oService);
-						data = JSON.parse(data);
-						resolve(data[rootKey]);
-					}
-				});
-			  
-		  });
-	  }
+		 var _path = this.generatePath(oService);
+		 return new Promise((resolve, reject)=>{
 
-	  constructServiceObject(req){
+			 if(oService.method === 'get' && oService.param.length > 0){
 
-		  let oService = {};
-		  oService.method = req.method.toLowerCase();
+				 fs.readFile(_path,'utf-8',(err, data)=>{
+					 if(err){
+						 console.error(err);
+						 resolve('no-data');
+					 }else{
+						 let oData = JSON.parse(data);
+						 delete oData[oService.param];
+						 fs.writeFile(_path,JSON.stringify(oData) ,"utf-8",err=>{
+							 if(err){
+								 console.error(err);
+								 reject(err);
+							 }else{
+								 resolve(oService);
+							 }
+						 });
+					 }
+				 } );
+			 }else{
+				 fs.unlink(_path, (err)=>{
+					 if(err){
+						 console.error(err);
+						 reject(err);
+					 }else{
+						 resolve(oService);
+					 }
+				 });
+			 }
+		 });
 
-		  if(oService.method === 'get' ){
-			  let _aUrl = req.url.split("?");
-			  oService.url = _aUrl[0];
+	 }
+	 deleteService(oService){
+		 return new Promise((resolve, reject)=>{
 
-			  if(_aUrl[1]&& _aUrl[1].length > 0){
-				  oService.param =decodeURIComponent(_aUrl[1].replace(/\+/g, '%20')); 
-			  }
-		  }else{
-			  oService.url = req.url;
-			  oService.param = decodeURIComponent(req.bodyData.replace(/\+/g, '%20'));
-		  }
+			 if(!this.__hasService(oService)){
+				 resolve("no_change");	
+			 }else{
+				 this.serviceMap.splice(this.__findService(oService), 1);
 
-		  oService.path = oService.url.replace(/\//g, "_");
-			return oService;
-	  }
+				 Promise.all([this.__saveServiceList(oService), this.__deleteService(oService)]).then(data=>{
+					 resolve(data);
+				 }).catch(err=>{
+					 reject(err);
+				 });
+			 }
+		 });
+	 }
 
-	  tryLoadLocalData(req,res){
+	 loadServiceData(oService){
 
-		  if(config.get("cacheLevel") > cacheLevel.no){
+		 return new Promise((resolve, reject)=>{
+			 var _path = this.generatePath(oService);
+			 fs.readFile(_path,'utf-8', (err,data)=>{
+				 if(err){
+					 console.error(err);
+					 reject(err);
+				 }else{
+					 let rootKey = this.__generateKey(oService);
+					 data = JSON.parse(data);
+					 resolve(data[rootKey]);
+				 }
+			 });
+
+		 });
+	 }
+
+	 constructServiceObject(req){
+
+		 let oService = {};
+		 oService.method = req.method.toLowerCase();
+
+		 if(oService.method === 'get' ){
+			 let _aUrl = req.url.split("?");
+			 oService.url = _aUrl[0];
+
+			 if(_aUrl[1]&& _aUrl[1].length > 0){
+				 oService.param =decodeURIComponent(_aUrl[1].replace(/\+/g, '%20')); 
+			 }
+		 }else{
+			 oService.url = req.url;
+			 oService.param = decodeURIComponent(req.bodyData.replace(/\+/g, '%20'));
+		 }
+
+		 oService.path = oService.url.replace(/\//g, "_");
+			 return oService;
+	 }
+
+	 tryLoadLocalData(req,res){
+
+		 if(config.get("cacheLevel") > cacheLevel.no){
 
 			 let oService = this.constructServiceObject(req);
 
-			  return this.loadServiceData(oService).then(data=>{
-				  res.writeHead(200,{
-					  "Content-Type":MIME.json
-				  });
-				  res.end(data);
-				  return data;
-			  }).catch(err=>{
-				  console.error(err);
-				  return err;
-			  });
+			 return this.loadServiceData(oService).then(data=>{
+				 res.writeHead(200,{
+					 "Content-Type":MIME.json
+				 });
 
-		  }else{
-			  return new Promise((resolve, reject)=>{
-					reject("ignore cache");
-			  });	
-			}	
-
-	  }
+				 res.end(data);
+				 return data;
+			 });
+		 }else{
+			 return new Promise((resolve, reject)=>{
+				 reject("ignore cache");
+			 });	
+		 }	
+	 }
  }
-
-
  class Cache{
 
 	 constructor(config){
@@ -561,22 +550,21 @@ const http = require("http")
 	 tryLoadLocalData(req, res){
 
 		 return new Promise((resolve, reject)=>{
-			if(this.cacheLevel > cacheLevel.no){
-			 let __cacheRes = this.cache[this.generateCacheKey(req)];
-			 if(__cacheRes){
-				 res.statusCode = "200";
-				 Object.keys(__cacheRes.header).forEach((item)=>{
-					 res.setHeader(item, __cacheRes.header[item] );
-				 });
-
-				 res.end(__cacheRes.data);
-				 resolve("done");
+			 if(this.cacheLevel > cacheLevel.no){
+				 let __cacheRes = this.cache[this.generateCacheKey(req)];
+				 if(__cacheRes){
+					 res.statusCode = "200";
+					 Object.keys(__cacheRes.header).forEach((item)=>{
+						 res.setHeader(item, __cacheRes.header[item] );
+					 });
+					 res.end(__cacheRes.data);
+					 resolve("done");
+				 }else{
+					 reject("no-data");
+				 }	
 			 }else{
-				reject("no-data");
-			 }	
-			}else{
-				reject("no-data");
-			}
+				 reject("no-data");
+			 }
 		 });
 
 	 }
@@ -650,26 +638,26 @@ const http = require("http")
  }
 
  function handleStatic(req,res,cb,urlPart){
-	
+
 	 let url = req.url;
 	 let _path = path.join(".", url);
 	 sendFile(_path, res);
 
  }
 
-  function assignValue(key, val, oo){
-	 
-		 key.split('.').forEach((key, inx, arr)=>{
-			 if(inx === arr.length -1 ){
-				oo[key] = val;
-			 }else{
-				 if(oo[key] === undefined){
-					oo[key] = {};
-				 }
+ function assignValue(key, val, oo){
+
+	 key.split('.').forEach((key, inx, arr)=>{
+		 if(inx === arr.length -1 ){
+			 oo[key] = val;
+		 }else{
+			 if(oo[key] === undefined){
+				 oo[key] = {};
 			 }
-		 });
-	 
-	 }
+		 }
+	 });
+
+ }
 
 
  function retrieveBody(req,res,cb){
@@ -728,36 +716,32 @@ const http = require("http")
  }
 
  const handleViewModel = (viewName)=>{
-		
+
 	 let _path = path.join("./public",viewName + ".ejs");
 	 let model = {};
 	 switch (viewName){
 
-	case 'config':
+		 case 'config':
 
-	 ServerConfig.fields.forEach(field=>{
-		model[field] = config.get(field);
-	 });
+			 ServerConfig.fields.forEach(field=>{
+				 model[field] = config.get(field);
+			 });
 
-	 
-	
-	 return {
-		 path:_path,
-		 model:{
-			 model: model,
-			 serviceList: serviceConfig.getServiceList()
-		 }
-	 };
+			 return {
+				 path:_path,
+				 model:{
+					 model: model,
+					 serviceList: serviceConfig.getServiceList()
+				 }
+			 };
+		 default:
+			 return {
+				 path:_path,
+				 model:{
+					 model: model
+				 }
 
-
-  default:
-	 return {
-		 path:_path,
-		 model:{
-			model: model
-		 }
-	 
-	 };
+			 };
 	 }
  };
 
@@ -839,9 +823,9 @@ const http = require("http")
 
 				 if(oService.data){
 					 Promise.all([serviceConfig.addServiceURL(oService),serviceConfig.addService(oService )]).then(args=>{
-							 res.writeHead(200,{
+						 res.writeHead(200,{
 							 "Content-Type":MIME.json
-							 });
+						 });
 						 res.end(JSON.stringify(args[0]));		
 
 					 }).catch(err=>{
@@ -866,26 +850,26 @@ const http = require("http")
 
 				 extractParam(req.bodyData).map(bind(mapParam,oService));
 				 serviceConfig.deleteService(oService).then(data=>{
-						res.writeHead(200,{
-							 "Content-Type":MIME.json
-						 });
-						 res.end(JSON.stringify({url: data}));	 
+					 res.writeHead(200,{
+						 "Content-Type":MIME.json
+					 });
+					 res.end(JSON.stringify({url: data}));	 
 				 }).catch(err=>{
-						 res.statusCode=500;
-						 res.statusMessage = err.message;
-						 res.end(res.statusMessage);	
+					 res.statusCode=500;
+					 res.statusMessage = err.message;
+					 res.end(res.statusMessage);	
 				 }); 
 				 break;
 
 			 case '/load_service':
 				 extractParam(aMathed[1]).map(bind(mapParam,oService));
 				 serviceConfig.loadServiceData(oService).then((data)=>{
-						 res.writeHead(200,{
-							 "Content-Type":MIME.json
-						 });
-						oService.data = data;
+					 res.writeHead(200,{
+						 "Content-Type":MIME.json
+					 });
+					 oService.data = data;
 
-						 res.end(JSON.stringify(oService));	
+					 res.end(JSON.stringify(oService));	
 				 }).catch(err=>{
 					 res.statusCode=500;
 					 res.statusMessage = err.message;
@@ -896,35 +880,32 @@ const http = require("http")
 
 
 		 function mapParam(pair){
-					if(pair.key === 'serviceUrl'){
-						 this.url = pair.val;
-						 this.path = pair.val.replace(/\//g, "_");
-					 }else if(pair.key === 'serviceData'){
-						 if(pair.val && pair.val.length > 0){
-							 this.data = pair.val;		
-						 }		 
-					 }else if (pair.key === 'serviceMethod'){
-						this.method = pair.val.toLowerCase();	
-					 
-					 }else if (pair.key === 'serviceParam'){
-						this.param = pair.val;	
-					 }
+			 if(pair.key === 'serviceUrl'){
+				 this.url = pair.val;
+				 this.path = pair.val.replace(/\//g, "_");
+			 }else if(pair.key === 'serviceData'){
+				 if(pair.val && pair.val.length > 0){
+					 this.data = pair.val;		
+				 }		 
+			 }else if (pair.key === 'serviceMethod'){
+				 this.method = pair.val.toLowerCase();	
+
+			 }else if (pair.key === 'serviceParam'){
+				 this.param = pair.val;	
+			 }
 
 		 }
 	 }
 
 	 function extractParam(sTarget){
-				return sTarget.split("&").map(pair=>{
-					 let aParam = pair.split("=");
-					 return {
-						 key: aParam[0],
-						 val: decodeURIComponent(aParam[1].replace(/\+/g, '%20'))
-					 };
-				 });
-
+		 return sTarget.split("&").map(pair=>{
+			 let aParam = pair.split("=");
+			 return {
+				 key: aParam[0],
+				 val: decodeURIComponent(aParam[1].replace(/\+/g, '%20'))
+			 };
+		 });
 	 }	
-
-
  }
  function retrieveDomainName(url){
 
@@ -951,18 +932,18 @@ const http = require("http")
 
 		 if(config.get("cacheLevel") > cacheLevel.no){
 			 if(config.get('workingMode') === 0){
-			
-	
 
-				hostRes.pipe(new CacheStream({key: oCache.generateCacheKey(req),cache: oCache.cache, header:Object.assign({},hostRes.headers)})).pipe(res);
+				 hostRes.pipe(new CacheStream({key: oCache.generateCacheKey(req),cache: oCache.cache, header:Object.assign({},hostRes.headers)})).pipe(res);
 			 }else{
-				//TODO cache in data provider mode
-				 let __path = serverConfig.generatePath({method: req.method, path:req.url.replace(/\//g, "_") });
-					 // __key =serverConfig.__path 
-
-					 //	 hostRes.pipe(new CacheStream({key: { path:__path } ,serviceConfig: serviceConfig })).pipe(res);	
+				 //TODO cache in data provider mode
+				 let oService = {};
+				 oService.method = req.method.toLowerCase();
+				 oService.url = req.url;
+				 oService.header = hostRes.headers;
+				 oService.path = serviceConfig.generatePath({method: oService.method, path:req.url.replace(/\//g, "_") });
+				hostRes.pipe(new CacheStream({ oService:oService  ,serviceConfig: serviceConfig })).pipe(res);	
 			 }
-		}else{
+		 }else{
 			 hostRes.pipe(res);
 		 }
 
@@ -979,14 +960,12 @@ const http = require("http")
 		 console.log(`status is ${__status}`);
 
 		 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-		 
-			console.log("find cache");
+
+			 console.log("find cache");
 		 }).catch(err=>{
-			hostRes.pipe(res);
+			 hostRes.pipe(res);
 		 });
 
-		 // if(oCache.tryLoadLocalData(req, res)) return;
-		 //hostRes.pipe(res);
 	 }
  }
 
@@ -998,27 +977,26 @@ const http = require("http")
  }
 
  function serverCb(req, res) {
-		
+
 
 	 if(req.url === "/favicon.ico"){
 		 res.end("");
 		 return;
 	 }
-
 	 //var matched;
 	 var _reqeustHeader = req.headers;
 
 	 if(config.get("cacheLevel") == cacheLevel.first){     // cache first
-		
-		 
+
+
 		 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-				console.log("find cache");
+			 console.log("find cache");
 		 }).catch(err=>{
 			 res.statusCode = 404;
 			 res.end(`can not find cache for ${req.url}`);
 		 });
-		 
-		 
+
+
 		 //	 if(!oCache.tryLoadLocalData(req, res)){
 		 //	 res.statusCode = 404;
 		 //	 res.end(`can not find cache for ${req.url}`);
@@ -1026,9 +1004,9 @@ const http = require("http")
 		 //}
 	 }else{
 
-		 var  endServerHost = config.get("endpointServer.host"),
+		 var endServerHost = config.get("endpointServer.host"),
 			 endServerPort = config.get("endpointServer.port"),
-				 oAuth;
+			 oAuth;
 
 				 if(config.get("endpointServer.user")){
 					 oAuth ='Basic ' + new Buffer(config.get("endpointServer.user") + ':' + config.get("endpointServer.password")).toString('base64');		
@@ -1052,15 +1030,15 @@ const http = require("http")
 							 if(config.get("cacheLevel") > cacheLevel.no){
 
 								 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-									console,log("got cache");
+									 console,log("got cache");
 								 }).catch(err=>{
-									errResponse(err, res);
+									 errResponse(err, res);
 								 })
 								 //if(oCache.tryLoadLocalData(req, res)) return;
 							 }else{
-								errResponse(err, res);		
+								 errResponse(err, res);		
 							 }
-							 				
+
 						 }else{
 							 handleResponse(endPointRes, res,req);	
 						 }
@@ -1090,7 +1068,7 @@ const http = require("http")
 						 // by this way, to get rid of untruseted https site
 						 __option.strictSSL=false;
 						 __option.agent = new https.Agent({
-							  host: endServerHost
+							 host: endServerHost
 							, port: endServerPort
 							, path: req.url
 							, rejectUnauthorized: false
@@ -1104,11 +1082,11 @@ const http = require("http")
 					 __req.on("error", (e)=>{
 
 						 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-						 
-							console.log("got cache");
+
+							 console.log("got cache");
 						 }).catch(err=>{
 							 errResponse(e, res);
-						 
+
 						 });
 
 
@@ -1117,13 +1095,13 @@ const http = require("http")
 						 // errResponse(e, res);
 
 					 });
-					 __req.setTimeout(10000, ()=>{
+					 __req.setTimeout(100000, ()=>{
 
-						oDataProxy.tryLoadLocalData(req, res).then(data=>{
-						 
-							console.log("got cache");
+						 oDataProxy.tryLoadLocalData(req, res).then(data=>{
+
+							 console.log("got cache");
 						 }).catch(err=>{
-							errResponse({message:"request has timeout : 10000"}, res);						 
+							 errResponse({message:"request has timeout : 10000"}, res);						 
 						 });
 
 						 // if(oCache.tryLoadLocalData(req, res)) return;
@@ -1141,10 +1119,6 @@ const http = require("http")
  var oRouter = new Router();	
  var oView = new View();
  var oDataProxy = config.get('workingMode') == 1? serviceConfig : oCache;
-
-
- console.log(config.get('workingMode'));
- console.log(config.get('workingMode') === 1);
 
 
  var requestViaProxy = ((fn,proxyOp)=>{
