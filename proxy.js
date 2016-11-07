@@ -863,8 +863,37 @@ const http = require("http")
 				 break;
 
 			 case '/sync_all':
+				
+				 var count  = serviceConfig.getServiceList().length,
+					 aSuccessResults = [],
+					 aFailedResults = [];
+				function waitResult(){
+					if(aSuccessResults.length + aFailedResults.length === count){
+						res.end(JSON.stringify({
+							"success": aSuccessResults,
+							"failed":aFailedResults 
+						}));
+					}
+				}
 
-				 serviceConfig.getServiceList().map((oService)=>{
+				 batchSyncService(res).map(results=>{
+
+					 results.then((oResult)=>{
+						 aSuccessResults.push(oResult.service);	
+						 waitResult();
+					 }).catch((oResult)=>{
+						 aSuccessResults.push(oResult.service);	
+						 waitResult();
+					 });
+				 });
+				 
+				 break;
+		 }
+		
+
+		function batchSyncService(res){
+		
+					return serviceConfig.getServiceList().map((oService)=>{
 					 var oRequestDuck = {
 						 headers:{
 						 	 "content-type":"application/json",
@@ -880,16 +909,20 @@ const http = require("http")
 					 return new Promise((resolve, reject)=>{
 						requestEndpointServer(oRequestDuck, res, (err, hostRes,res,req)=>{
 							if(err){
-								reject(err);
+								reject({
+									error: err,
+									service: oService
+								});
 							}else{
-								resolve(hostRes);
+								resolve({
+									response: hostRes,
+									service : oService
+								});
 							}	
 						});
 					 });
 				 });
-				 //TODO
-				 break;
-		 }
+		}
 
 		 function mapParam(pair){
 			 if(pair.key === 'serviceUrl'){
@@ -905,7 +938,6 @@ const http = require("http")
 			 }else if (pair.key === 'serviceParam'){
 				 this.param = pair.val;	
 			 }
-
 		 }
 	 }
 
