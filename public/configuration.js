@@ -74,7 +74,7 @@
 					dataType: 'json',
 					type: methodName,
 					headers:{
-						'__ignore_cache__':true
+						'__ignore-cache__':true
 					},
 					success:function(data){
 						console.log("get back");

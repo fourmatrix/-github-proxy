@@ -230,8 +230,6 @@ const http = require("http")
 		 return  this.__symbolMap.get(key) || this.__symbolMap.set(key, Symbol(key)).get(key);
 	 }
 
-
-
 	 __loadEnvironmentConfig(){
 
 		 const aKeys = ServerConfig.fields;
@@ -789,19 +787,6 @@ const http = require("http")
 					 config.set(pair.key, pair.val);
 				 });
 
-				 //				 req.bodyData.split("&").map(pair=>{
-				 //					 let aParam = pair.split("=");
-				 //					 return {
-				 //						 key: aParam[0],
-				 //						 val: decodeURIComponent(aParam[1])
-				 //					 };
-				 //				 });
-				 //				 req.bodyData.split("&").map(pair=>{
-				 //					 let aParam = pair.split("=");
-				 //					 config.set(aParam[0], decodeURIComponent(aParam[1]));
-				 //
-				 //				 });
-
 				 config.save().then(()=>{
 
 					 res.writeHead(200,{
@@ -876,8 +861,35 @@ const http = require("http")
 					 res.end(res.statusMessage);	
 				 });
 				 break;
-		 }
 
+			 case '/sync_all':
+
+				 serviceConfig.getServiceList().map((oService)=>{
+					 var oRequestDuck = {
+						 headers:{
+						 	 "content-type":"application/json",
+							"accept":"application/json",
+							"__ignore-cache__":true,
+						 },
+						 url:oService.url,
+						 method:oService.method
+					 };
+					 if(oRequestDuck.method === 'post' && oService.param && oService.param.length > 0){
+						oRequestDuck.bodyData = oService.param;
+					 } 
+					 return new Promise((resolve, reject)=>{
+						requestEndpointServer(oRequestDuck, res, (err, hostRes,res,req)=>{
+							if(err){
+								reject(err);
+							}else{
+								resolve(hostRes);
+							}	
+						});
+					 });
+				 });
+				 //TODO
+				 break;
+		 }
 
 		 function mapParam(pair){
 			 if(pair.key === 'serviceUrl'){
@@ -919,10 +931,15 @@ const http = require("http")
 	 return url.replace(/^(http(?:s)?:\/\/)(?:[^\/]+)(\/.*)$/, "$1" + domain + "$2");
  }
 
- function handleResponse(hostRes, res,req){
-	 res.statusCode = hostRes.statusCode;
+ function handleResponse(error,hostRes, res,req){
 
-	 var __ignoreCache = req.headers.__ignore_cache__;
+	 if(error){
+		 errResponse(error, res); 
+		 return ;
+	 }
+
+	 res.statusCode = hostRes.statusCode;
+	 var __ignoreCache = req.headers["__ignore-cache__"];
 
 	 Object.keys(hostRes.headers).forEach((item)=>{
 		 res.setHeader(item, hostRes.headers[item] );
@@ -962,7 +979,7 @@ const http = require("http")
 	
 		 if(!__ignoreCache){
 			 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-				 console.log("find cache");
+				 console.log("find from cache");
 			 }).catch(err=>{
 				 hostRes.pipe(res);
 			 });
@@ -979,35 +996,9 @@ const http = require("http")
 
  }
 
- function serverCb(req, res) {
-
-
-	 if(req.url === "/favicon.ico"){
-		 res.end("");
-		 return;
-	 }
-	 var _reqeustHeader = req.headers;
-	 var __ignoreCache = _reqeustHeader.__ignore_cache__;
-
-	 if(config.get("cacheLevel") == cacheLevel.first && !__ignoreCache){     // cache first
-
-
-		 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-			 console.log("find cache");
-		 }).catch(err=>{
-			 res.statusCode = 404;
-			 res.end(`can not find cache for ${req.url}`);
-		 });
-
-
-		 //	 if(!oCache.tryLoadLocalData(req, res)){
-		 //	 res.statusCode = 404;
-		 //	 res.end(`can not find cache for ${req.url}`);
-		 //	 return;
-		 //}
-	 }else{
-
-		 var endServerHost = config.get("endpointServer.host"),
+ function requestEndpointServer(req,res, cb){
+ 
+			 var endServerHost = config.get("endpointServer.host"),
 			 endServerPort = config.get("endpointServer.port"),
 			 oAuth;
 
@@ -1035,13 +1026,13 @@ const http = require("http")
 								 oDataProxy.tryLoadLocalData(req, res).then(data=>{
 									 console,log("got cache");
 								 }).catch(err=>{
-									 errResponse(err, res);
+									cb(err, req,res);
 								 })
 							 }else{
-								 errResponse(err, res);		
+								 cb(err, req,res);
 							 }
 						 }else{
-							 handleResponse(endPointRes, res,req);	
+							 cb(null,endPointRes, res,req);	
 						 }
 					 });
 
@@ -1049,7 +1040,7 @@ const http = require("http")
 
 					 var __option = {};
 					 __option.method = req.method;
-					 __option.headers=Object.assign(__option.headers || {}, _reqeustHeader);
+					 __option.headers=Object.assign(__option.headers || {}, req.headers);
 					 __option.headers.host = endServerHost;
 					 oAuth&&(__option.headers.Authorization = oAuth);
 					 if(config.hasProxy()){
@@ -1077,34 +1068,65 @@ const http = require("http")
 					 }
 
 					 var __req = (config.isSSL()?https:http).request(__option,(hostRes)=>{
-						 handleResponse(hostRes, res,req);
+						 cb(null,hostRes, res,req);
 					 });
 
 					 __req.on("error", (e)=>{
 
-						 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-							 console.log("got cache");
-						 }).catch(err=>{
-							 errResponse(e, res);
-						 });
+						 if(!__ignoreCache){
+							 oDataProxy.tryLoadLocalData(req, res).then(data=>{
+								 console.log("got cache");
+							 }).catch(err=>{
+								  cb(err, req,res);
+							 });
+
+						 }else{
+							cb(e, req, res); 
+						 }
+
 
 					 });
 					 __req.setTimeout(100000, ()=>{
 
-						 oDataProxy.tryLoadLocalData(req, res).then(data=>{
-
-							 console.log("got cache");
-						 }).catch(err=>{
-							 errResponse({message:"request has timeout : 10000"}, res);						 
-						 });
-
-						 // if(oCache.tryLoadLocalData(req, res)) return;
-						 //errResponse({message:"request has timeout : 10000"}, res);
+						 if(!__ignoreCache){
+							 oDataProxy.tryLoadLocalData(req, res).then(data=>{
+								 console.log("got cache");
+							 }).catch(err=>{				 
+								cb({message:"request has timeout : 10000"}, req,res);
+							 });
+						 }else{
+							cb({message:"request has timeout : 10000"}, req,res);
+						 }
 					 });	
+					 
 					 req.bodyData&&__req.write(req.bodyData);			// post request body
 					 __req.end();
 
-				 }	
+				 }	 
+ }
+
+ function serverCb(req, res) {
+
+	 if(req.url === "/favicon.ico"){
+		 res.end("");
+		 return;
+	 }
+	 var _reqeustHeader = req.headers;
+	 var __ignoreCache = _reqeustHeader.["__ignore-cache__"];
+
+	 if(config.get("cacheLevel") == cacheLevel.first && !__ignoreCache){     // cache first
+
+
+		 oDataProxy.tryLoadLocalData(req, res).then(data=>{
+			 console.log("find cache");
+		 }).catch(err=>{
+			 res.statusCode = 404;
+			 res.end(`can not find cache for ${req.url}`);
+		 });
+
+	 }else{
+		requestEndpointServer(req, res,handleResponse);
+		
 	 }
  }
  var config = new ServerConfig();
@@ -1113,7 +1135,6 @@ const http = require("http")
  var oRouter = new Router();	
  var oView = new View();
  var oDataProxy = config.get('workingMode') == 1? serviceConfig : oCache;
-
 
  var requestViaProxy = ((fn,proxyOp)=>{
 	 return function(){
